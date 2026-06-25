@@ -1,4 +1,4 @@
-# Multi-Constellation GNSS Signal Reliability and Position Accuracy Enhancement Using Machine Learning
+# Multi-Constellation GNSS Signal Reliability Prediction and Error Enhancement Using Machine Learning
 
 ## Overview
 
