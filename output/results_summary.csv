@@ -1,0 +1,5 @@
+Dataset,Satellites,Position_Error_m,Mean_SNR
+Metal Plate,60,3.9683,0.0
+Foil,40,11.3532,0.0
+Foil02,42,5.7269,0.0
+SKY01,69,0.0,45.2

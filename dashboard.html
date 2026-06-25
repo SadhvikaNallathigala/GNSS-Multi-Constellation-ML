@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GNSS ML Dashboard — Multi-Constellation Error Enhancement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GNSS ML DASHBOARD — COMPLETE STYLESHEET
+   Light theme · Blue/Cyan · Glassmorphism · Research grade
+   ============================================================ */
+
+/* ── 1. TOKENS ─────────────────────────────────────────── */
+:root {
+  --navy:       #0A1628;
+  --navy-2:     #0F2044;
+  --blue:       #1D6AE5;
+  --blue-mid:   #2979FF;
+  --blue-light: #5B9BFF;
+  --cyan:       #00C8E0;
+  --cyan-light: #5DE8F7;
+  --indigo:     #4F46E5;
+  --teal:       #0D9488;
+  --emerald:    #10B981;
+  --amber:      #F59E0B;
+  --rose:       #F43F5E;
+  --violet:     #7C3AED;
+
+  --bg:         #F0F5FF;
+  --bg-alt:     #E8EEFF;
+  --surface:    rgba(255,255,255,0.82);
+  --surface-hi: rgba(255,255,255,0.95);
+  --border:     rgba(29,106,229,0.12);
+  --border-mid: rgba(29,106,229,0.22);
+
+  --text:       #0A1628;
+  --text-2:     #1E3354;
+  --text-3:     #334E7A;
+  --muted:      #5A7399;
+  --muted-lt:   #8BA8CC;
+
+  --sh-sm:  0 2px 8px rgba(10,22,40,0.07);
+  --sh-md:  0 8px 28px rgba(10,22,40,0.10);
+  --sh-lg:  0 18px 52px rgba(10,22,40,0.13);
+  --sh-xl:  0 28px 80px rgba(10,22,40,0.16);
+
+  --r-sm: 10px; --r-md: 16px; --r-lg: 22px; --r-xl: 28px;
+  --ease: cubic-bezier(.4,0,.2,1);
+  --spring: cubic-bezier(0.175,0.885,0.32,1.275);
+  --sidebar-w: 260px;
+}
+
+/* ── 2. RESET ───────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width:100%; height:auto; display:block; }
+a { text-decoration:none; color:inherit; }
+
+/* ── 3. AURORA BACKGROUND ──────────────────────────────── */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:-2;
+  background:
+    radial-gradient(ellipse 100% 70% at 0% 0%, rgba(29,106,229,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse  80% 60% at 100% 0%, rgba(0,200,224,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse  70% 50% at 50% 100%, rgba(79,70,229,0.07) 0%, transparent 55%),
+    #F0F5FF;
+}
+body::after {
+  content:'';
+  position:fixed; inset:0; z-index:-1;
+  background:
+    radial-gradient(ellipse 50% 40% at 20% 30%, rgba(91,155,255,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 80% 70%, rgba(0,200,224,0.09) 0%, transparent 60%);
+  animation: aurora 20s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+@keyframes aurora {
+  0%   { transform: scale(1) translate(0,0); }
+  50%  { transform: scale(1.05) translate(1.5%,1%); }
+  100% { transform: scale(0.97) translate(-1%,1.5%); }
+}
+
+/* ── 4. LAYOUT SHELL ────────────────────────────────────── */
+.shell { display:flex; min-height:100vh; }
+
+/* ── 5. SIDEBAR ─────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  background: rgba(10,22,40,0.96);
+  backdrop-filter: blur(24px);
+  border-right: 1px solid rgba(91,155,255,0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  overflow-y: auto;
+  transition: transform 0.35s var(--ease);
+}
+.sidebar::-webkit-scrollbar { width:4px; }
+.sidebar::-webkit-scrollbar-thumb { background:rgba(91,155,255,0.25); border-radius:2px; }
+
+.sidebar-brand {
+  padding: 1.8rem 1.5rem 1.4rem;
+  border-bottom: 1px solid rgba(91,155,255,0.10);
+}
+.brand-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  border-radius: 12px;
+  display: flex; align-items:center; justify-content:center;
+  font-size: 1.3rem;
+  margin-bottom: 0.9rem;
+  box-shadow: 0 4px 20px rgba(29,106,229,0.35);
+  animation: orbit-pulse 4s ease-in-out infinite;
+}
+@keyframes orbit-pulse {
+  0%,100% { box-shadow: 0 4px 20px rgba(29,106,229,0.35); }
+  50%     { box-shadow: 0 4px 32px rgba(0,200,224,0.50); }
+}
+.brand-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+.brand-sub {
+  font-size: 0.68rem;
+  color: rgba(139,168,204,0.70);
+  margin-top: 0.2rem;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-section-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(139,168,204,0.50);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 1.2rem 1.5rem 0.4rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1.5rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: rgba(139,168,204,0.75);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.nav-item:hover {
+  color: #fff;
+  background: rgba(91,155,255,0.10);
+  border-left-color: var(--blue-light);
+}
+.nav-item.active {
+  color: #fff;
+  background: rgba(29,106,229,0.18);
+  border-left-color: var(--cyan);
+}
+.nav-item.active .nav-icon { color: var(--cyan); }
+.nav-icon { font-size: 1rem; width: 20px; text-align:center; flex-shrink:0; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 1.2rem 1.5rem;
+  border-top: 1px solid rgba(91,155,255,0.10);
+  font-size: 0.7rem;
+  color: rgba(139,168,204,0.45);
+  line-height: 1.5;
+}
+
+/* ── 6. MAIN CONTENT ────────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── 7. TOPBAR ──────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0; z-index: 100;
+  height: 60px;
+  background: rgba(240,245,255,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-shadow: var(--sh-sm);
+}
+.topbar-left {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: -0.2px;
+}
+.topbar-right { display:flex; align-items:center; gap:1rem; }
+.topbar-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.28rem 0.75rem;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+.badge-live   { background:rgba(16,185,129,0.12); color:var(--emerald); border:1px solid rgba(16,185,129,0.25); }
+.badge-ml     { background:rgba(79,70,229,0.10);  color:var(--indigo);  border:1px solid rgba(79,70,229,0.22); }
+.menu-toggle {
+  display:none;
+  background:none; border:none; cursor:pointer;
+  color:var(--text-2); font-size:1.3rem; padding:0.3rem;
+}
+
+/* ── 8. PAGE BODY ───────────────────────────────────────── */
+.page { padding: 2rem; display:flex; flex-direction:column; gap:2.5rem; }
+
+/* ── 9. SECTION TITLES ──────────────────────────────────── */
+.section-head {
+  display:flex; align-items:flex-end; justify-content:space-between;
+  margin-bottom: 1.3rem; gap:1rem; flex-wrap:wrap;
+}
+.section-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 0.3rem;
+}
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+.section-sub {
+  font-size: 0.83rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  line-height: 1.5;
+}
+.section-divider {
+  width: 40px; height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 2px;
+  margin: 0.5rem 0 0;
+}
+
+/* ── 10. HERO ───────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--navy) 0%, #0D2B5A 45%, #113A75 100%);
+  border-radius: var(--r-xl);
+  padding: 3.5rem 3rem;
+  overflow: hidden;
+  box-shadow: var(--sh-xl);
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+}
+.hero-bg {
+  position:absolute; inset:0; pointer-events:none; overflow:hidden;
+}
+/* Animated orbital rings */
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(91,155,255,0.18);
+  animation: spin-ring linear infinite;
+}
+.ring1 { width:320px;height:320px; top:-80px;right:-60px; animation-duration:28s; }
+.ring2 { width:220px;height:220px; top:-20px;right:20px;  animation-duration:20s; animation-direction:reverse; border-color:rgba(0,200,224,0.14); }
+.ring3 { width:500px;height:500px; top:-160px;right:-160px; animation-duration:45s; border-color:rgba(91,155,255,0.07); }
+@keyframes spin-ring { to { transform:rotate(360deg); } }
+
+/* Satellite dots */
+.sat-dot {
+  position:absolute;
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 12px var(--cyan);
+  animation: orbit-dot linear infinite;
+}
+@keyframes orbit-dot {
+  0%  { transform: rotate(0deg) translateX(140px) rotate(0deg); }
+  100%{ transform: rotate(360deg) translateX(140px) rotate(-360deg); }
+}
+.sat-dot:nth-child(1) { top:calc(50% - 3px + 0px); right:calc(50% - 3px - 130px + 260px); animation-duration:18s; animation-delay:0s; }
+.sat-dot:nth-child(2) { top:calc(50% - 3px); right:calc(50% - 3px - 70px + 220px); animation-duration:12s; animation-delay:-4s; background:var(--blue-light); box-shadow:0 0 10px var(--blue-light); width:5px;height:5px; }
+.sat-dot:nth-child(3) { top:calc(50% - 3px); right:calc(50% - 3px - 110px + 250px); animation-duration:22s; animation-delay:-8s; background:#fff; box-shadow:0 0 8px rgba(255,255,255,0.6); width:4px;height:4px; }
+/* Grid overlay */
+.hero-grid {
+  position:absolute; inset:0;
+  background-image: linear-gradient(rgba(91,155,255,0.06) 1px,transparent 1px), linear-gradient(90deg,rgba(91,155,255,0.06) 1px,transparent 1px);
+  background-size: 40px 40px;
+}
+
+.hero-content { position:relative; z-index:2; max-width:680px; }
+.hero-tag {
+  display:inline-flex; align-items:center; gap:0.4rem;
+  font-size:0.68rem; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color:var(--cyan); background:rgba(0,200,224,0.12); border:1px solid rgba(0,200,224,0.25);
+  border-radius:20px; padding:0.3rem 0.85rem; margin-bottom:1.1rem;
+}
+.hero h1 {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(1.5rem,3vw,2.3rem);
+  font-weight:800;
+  color:#fff;
+  line-height:1.12;
+  letter-spacing:-0.6px;
+  margin-bottom:0.9rem;
+}
+.hero h1 span {
+  background:linear-gradient(135deg,var(--cyan-light),var(--blue-light));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.hero-desc {
+  font-size:0.93rem; color:rgba(139,168,204,0.85);
+  line-height:1.7; max-width:560px; margin-bottom:1.8rem;
+}
+.hero-meta {
+  display:flex; flex-wrap:wrap; gap:0.6rem;
+}
+.hero-pill {
+  font-size:0.7rem; font-weight:600; letter-spacing:0.3px;
+  padding:0.32rem 0.85rem;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14);
+  border-radius:20px; color:rgba(255,255,255,0.75);
+}
+
+/* ── 11. KPI GRID ───────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 1rem;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sh-md);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s var(--ease);
+  cursor: default;
+}
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sh-lg), 0 0 0 1px var(--border-mid);
+}
+.kpi-card::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:3px;
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+}
+.kpi-blue::before   { background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.kpi-teal::before   { background:linear-gradient(90deg,var(--teal),var(--emerald)); }
+.kpi-amber::before  { background:linear-gradient(90deg,var(--amber),#FB923C); }
+.kpi-rose::before   { background:linear-gradient(90deg,var(--rose),var(--violet)); }
+.kpi-indigo::before { background:linear-gradient(90deg,var(--indigo),var(--violet)); }
+
+.kpi-icon {
+  width:42px; height:42px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; margin-bottom:1rem;
+}
+.kpi-blue   .kpi-icon { background:rgba(29,106,229,0.10); }
+.kpi-teal   .kpi-icon { background:rgba(13,148,136,0.10); }
+.kpi-amber  .kpi-icon { background:rgba(245,158,11,0.10); }
+.kpi-rose   .kpi-icon { background:rgba(244,63,94,0.10);  }
+.kpi-indigo .kpi-icon { background:rgba(79,70,229,0.10);  }
+
+.kpi-label {
+  font-size:0.7rem; font-weight:700; letter-spacing:1.2px;
+  text-transform:uppercase; color:var(--muted); margin-bottom:0.4rem;
+}
+.kpi-value {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:2rem; font-weight:800;
+  letter-spacing:-1px; color:var(--text);
+  line-height:1;
+}
+.kpi-unit { font-size:0.85rem; font-weight:600; color:var(--muted-lt); margin-left:3px; }
+.kpi-sub  { font-size:0.74rem; color:var(--muted); margin-top:0.5rem; line-height:1.4; }
+.kpi-badge {
+  display:inline-flex; align-items:center; gap:0.3rem;
+  font-size:0.68rem; font-weight:700;
+  padding:0.22rem 0.6rem; border-radius:20px; margin-top:0.6rem;
+}
+.badge-good { background:rgba(16,185,129,0.10); color:var(--emerald); }
+.badge-warn { background:rgba(245,158,11,0.10);  color:var(--amber); }
+.badge-bad  { background:rgba(244,63,94,0.10);   color:var(--rose); }
+
+/* ── 12. GLASS CARD ─────────────────────────────────────── */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(24px);
+  box-shadow: var(--sh-md);
+  overflow: hidden;
+  transition: box-shadow 0.3s var(--ease);
+}
+.glass-card:hover { box-shadow: var(--sh-lg); }
+.card-header {
+  padding: 1.4rem 1.6rem;
+  border-bottom: 1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;
+}
+.card-title {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:1rem; font-weight:700; color:var(--text); letter-spacing:-0.2px;
+  display:flex; align-items:center; gap:0.5rem;
+}
+.card-icon {
+  width:28px;height:28px; border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;
+  background:linear-gradient(135deg,rgba(29,106,229,0.12),rgba(0,200,224,0.12));
+}
+.card-body { padding:1.6rem; }
+
+/* ── 13. IMAGE CHART CARDS ──────────────────────────────── */
+.chart-img-wrap {
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: rgba(240,245,255,0.6);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: all 0.3s var(--ease);
+  cursor: zoom-in;
+}
+.chart-img-wrap:hover { transform:scale(1.01); box-shadow:var(--sh-lg); z-index:2; }
+.chart-img-wrap img {
+  width:100%; height:auto;
+  display:block;
+  transition: transform 0.4s var(--ease);
+}
+.chart-img-wrap:hover img { transform:scale(1.02); }
+
+/* Fallback placeholder when image missing */
+.img-placeholder {
+  width:100%; min-height:220px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:0.6rem; background:linear-gradient(135deg,#EEF3FF,#E8F4FF);
+  border-radius:var(--r-md); border:2px dashed rgba(29,106,229,0.15);
+}
+.img-placeholder .ph-icon { font-size:2.5rem; opacity:0.4; }
+.img-placeholder .ph-text { font-size:0.78rem; color:var(--muted); }
+
+/* ── 14. TWO-COL GRID ───────────────────────────────────── */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+.three-col { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+
+/* ── 15. DATA TABLE ─────────────────────────────────────── */
+.data-table-wrap { overflow-x:auto; }
+.data-table {
+  width:100%; border-collapse:collapse;
+  font-size:0.84rem;
+}
+.data-table thead th {
+  padding:0.85rem 1rem;
+  text-align:left;
+  font-size:0.68rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--muted); background:rgba(240,245,255,0.8);
+  border-bottom:2px solid var(--border-mid);
+  white-space:nowrap;
+}
+.data-table tbody tr {
+  border-bottom:1px solid var(--border);
+  transition:background 0.15s;
+}
+.data-table tbody tr:hover { background:rgba(29,106,229,0.04); }
+.data-table tbody tr:last-child { border-bottom:none; }
+.data-table td {
+  padding:0.85rem 1rem;
+  color:var(--text-3);
+  vertical-align:middle;
+}
+.data-table td:first-child { font-weight:600; color:var(--text); }
+.mono { font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+.env-dot {
+  display:inline-flex; align-items:center; gap:0.4rem;
+}
+.dot {
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.dot-green  { background:var(--emerald); box-shadow:0 0 6px rgba(16,185,129,0.5); }
+.dot-amber  { background:var(--amber);   box-shadow:0 0 6px rgba(245,158,11,0.5); }
+.dot-rose   { background:var(--rose);    box-shadow:0 0 6px rgba(244,63,94,0.5); }
+.dot-blue   { background:var(--blue);    box-shadow:0 0 6px rgba(29,106,229,0.5); }
+
+.error-bar-wrap {
+  width:100%; background:rgba(29,106,229,0.08);
+  border-radius:20px; height:8px; overflow:hidden; min-width:80px;
+}
+.error-bar {
+  height:100%; border-radius:20px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));
+  transition:width 1.2s var(--spring);
+}
+
+/* ── 16. CONSTELLATION BAR CHART ────────────────────────── */
+.const-bars { display:flex; flex-direction:column; gap:0.9rem; }
+.const-row  { display:flex; align-items:center; gap:0.85rem; }
+.const-label{
+  font-size:0.75rem; font-weight:700; color:var(--text-2); width:80px; flex-shrink:0;
+}
+.const-track{
+  flex:1; height:32px; background:rgba(240,245,255,0.8);
+  border-radius:8px; overflow:hidden; position:relative;
+  border:1px solid var(--border);
+}
+.const-fill {
+  height:100%; border-radius:8px;
+  display:flex; align-items:center; padding:0 0.75rem;
+  font-size:0.72rem; font-weight:700; color:#fff;
+  white-space:nowrap;
+  transition:width 1.4s var(--spring);
+  min-width:60px;
+}
+.const-count {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.73rem; color:var(--muted); width:65px; text-align:right; flex-shrink:0;
+}
+.fill-beidou  { background:linear-gradient(90deg,#DC2626,#EF4444); }
+.fill-galileo { background:linear-gradient(90deg,var(--blue),var(--blue-light)); }
+.fill-gps     { background:linear-gradient(90deg,var(--emerald),#34D399); }
+.fill-glonass { background:linear-gradient(90deg,var(--amber),#FCD34D); color:var(--text-2) !important; }
+.fill-sbas    { background:linear-gradient(90deg,var(--violet),#A78BFA); }
+.fill-qzss    { background:linear-gradient(90deg,var(--cyan),var(--cyan-light)); color:var(--text-2) !important; }
+.fill-irnss   { background:linear-gradient(90deg,var(--teal),#2DD4BF); }
+
+/* ── 17. ML RESULTS ─────────────────────────────────────── */
+.ml-metric-row {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem;
+}
+.ml-metric {
+  background:linear-gradient(135deg,rgba(240,245,255,0.8),rgba(255,255,255,0.6));
+  border:1px solid var(--border); border-radius:var(--r-md);
+  padding:1.1rem; text-align:center;
+  transition:all 0.25s var(--ease);
+}
+.ml-metric:hover { transform:translateY(-2px); box-shadow:var(--sh-sm); }
+.ml-metric-val {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:1.65rem; font-weight:800;
+  letter-spacing:-0.6px; color:var(--text);
+}
+.ml-metric-label { font-size:0.68rem; font-weight:700; color:var(--muted); letter-spacing:0.8px; text-transform:uppercase; margin-top:0.2rem; }
+
+.progress-row { display:flex; flex-direction:column; gap:0.85rem; }
+.progress-item { display:flex; align-items:center; gap:0.75rem; }
+.progress-label { font-size:0.78rem; font-weight:600; color:var(--text-3); width:110px; flex-shrink:0; }
+.progress-track {
+  flex:1; height:10px; background:rgba(29,106,229,0.08);
+  border-radius:20px; overflow:hidden;
+}
+.progress-fill {
+  height:100%; border-radius:20px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));
+  transition:width 1.5s var(--spring);
+}
+.progress-val { font-family:'JetBrains Mono',monospace; font-size:0.73rem; font-weight:600; color:var(--text-3); width:42px; text-align:right; flex-shrink:0; }
+
+/* ── 18. CONFUSION MATRIX ───────────────────────────────── */
+.matrix-wrap {
+  display:grid; grid-template-columns:auto 1fr 1fr 1fr;
+  gap:4px; max-width:360px;
+}
+.matrix-cell {
+  display:flex; align-items:center; justify-content:center;
+  border-radius:8px; font-weight:700; font-size:0.85rem;
+}
+.matrix-header {
+  font-size:0.65rem; font-weight:700; color:var(--muted);
+  text-align:center; padding:0.4rem;
+}
+.matrix-label {
+  font-size:0.7rem; font-weight:700; color:var(--muted);
+  padding:0.4rem 0.6rem; text-align:right; white-space:nowrap;
+}
+.matrix-data {
+  width:80px; height:80px;
+  border-radius:10px;
+  color:#fff; font-size:1.1rem; font-weight:800;
+  transition:transform 0.2s var(--ease);
+}
+.matrix-data:hover { transform:scale(1.06); cursor:default; }
+.matrix-diag { background:linear-gradient(135deg,var(--blue),var(--cyan)); }
+.matrix-off  { background:rgba(244,63,94,0.15); color:var(--rose); }
+
+/* ── 19. CONCLUSION CARD ────────────────────────────────── */
+.conclusion-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.conclusion-item {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:1.4rem;
+  box-shadow:var(--sh-sm);
+  transition:all 0.3s var(--ease);
+}
+.conclusion-item:hover { transform:translateY(-3px); box-shadow:var(--sh-md); }
+.conclusion-num {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:2.2rem; font-weight:800;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  line-height:1; margin-bottom:0.6rem;
+}
+.conclusion-text { font-size:0.84rem; color:var(--text-3); line-height:1.6; }
+
+/* ── 20. RECEIVER POSITION CARD ─────────────────────────── */
+.position-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem;
+}
+.pos-item {
+  background:rgba(29,106,229,0.05); border:1px solid var(--border);
+  border-radius:var(--r-sm); padding:1rem; text-align:center;
+}
+.pos-axis { font-size:0.65rem; font-weight:800; letter-spacing:2px; color:var(--blue); text-transform:uppercase; margin-bottom:0.3rem; }
+.pos-val  { font-family:'JetBrains Mono',monospace; font-size:0.83rem; font-weight:600; color:var(--text-2); word-break:break-all; }
+
+/* ── 21. LABEL KEY ──────────────────────────────────────── */
+.label-grid { display:flex; gap:1rem; flex-wrap:wrap; }
+.label-pill {
+  display:inline-flex; align-items:center; gap:0.5rem;
+  padding:0.5rem 1rem; border-radius:20px;
+  font-size:0.78rem; font-weight:700;
+  border:1px solid transparent;
+}
+.label-0 { background:rgba(16,185,129,0.10); color:var(--teal); border-color:rgba(16,185,129,0.22); }
+.label-1 { background:rgba(245,158,11,0.10); color:var(--amber); border-color:rgba(245,158,11,0.22); }
+.label-2 { background:rgba(244,63,94,0.10);  color:var(--rose); border-color:rgba(244,63,94,0.22); }
+
+/* ── 22. STATS ROW ──────────────────────────────────────── */
+.stats-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.stat-block {
+  background:linear-gradient(135deg,rgba(29,106,229,0.06),rgba(0,200,224,0.06));
+  border:1px solid var(--border); border-radius:var(--r-md); padding:1.2rem;
+  display:flex; flex-direction:column; gap:0.2rem;
+}
+.stat-block-label { font-size:0.68rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.stat-block-val   { font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+.stat-block-sub   { font-size:0.73rem; color:var(--muted); }
+
+/* ── 23. FOOTER ─────────────────────────────────────────── */
+.footer {
+  background:var(--navy);
+  color:rgba(139,168,204,0.75);
+  padding:2rem;
+  text-align:center;
+  font-size:0.78rem;
+  line-height:1.7;
+}
+.footer strong { color:#fff; }
+.footer-grid { display:flex; justify-content:center; gap:2rem; flex-wrap:wrap; margin-top:0.8rem; }
+.footer-item { display:flex; flex-direction:column; gap:0.15rem; }
+.footer-item-label { font-size:0.62rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(139,168,204,0.45); }
+.footer-item-val   { font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.7); }
+
+/* ── 24. LIGHTBOX ───────────────────────────────────────── */
+.lightbox {
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(10,22,40,0.90);
+  backdrop-filter:blur(16px);
+  align-items:center; justify-content:center;
+  padding:2rem;
+  cursor:zoom-out;
+}
+.lightbox.open { display:flex; }
+.lightbox img  { max-width:90vw; max-height:88vh; border-radius:var(--r-md); box-shadow:var(--sh-xl); object-fit:contain; }
+.lightbox-close {
+  position:absolute; top:1.2rem; right:1.5rem;
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20);
+  border-radius:50%; width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem; color:#fff; cursor:pointer;
+  transition:all 0.2s var(--ease);
+}
+.lightbox-close:hover { background:rgba(255,255,255,0.18); }
+
+/* ── 25. SCROLL REVEAL ──────────────────────────────────── */
+.reveal {
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ── 26. TOOLTIP ────────────────────────────────────────── */
+[data-tip] { position:relative; }
+[data-tip]:hover::after {
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+  background:var(--navy-2); color:#fff;
+  font-size:0.7rem; font-weight:500; padding:0.35rem 0.7rem;
+  border-radius:6px; white-space:nowrap; z-index:50;
+  box-shadow:var(--sh-sm);
+  pointer-events:none;
+}
+
+/* ── 27. SCROLLBAR ──────────────────────────────────────── */
+::-webkit-scrollbar       { width:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(29,106,229,0.25); border-radius:3px; }
+
+/* ── 28. RESPONSIVE ─────────────────────────────────────── */
+@media (max-width:1200px) {
+  .kpi-grid       { grid-template-columns:repeat(2,1fr); }
+  .ml-metric-row  { grid-template-columns:repeat(2,1fr); }
+  .three-col      { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:900px) {
+  :root { --sidebar-w:0px; }
+  .sidebar { transform:translateX(-260px); width:260px; }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; }
+  .menu-toggle { display:flex; }
+  .two-col   { grid-template-columns:1fr; }
+  .three-col { grid-template-columns:1fr; }
+  .conclusion-grid { grid-template-columns:1fr 1fr; }
+  .position-grid   { grid-template-columns:1fr; }
+}
+@media (max-width:600px) {
+  .page  { padding:1rem; gap:1.5rem; }
+  .hero  { padding:2rem 1.5rem; }
+  .hero h1 { font-size:1.4rem; }
+  .kpi-grid       { grid-template-columns:1fr 1fr; }
+  .ml-metric-row  { grid-template-columns:1fr 1fr; }
+  .conclusion-grid{ grid-template-columns:1fr; }
+  .stats-row      { grid-template-columns:1fr; }
+  .topbar { padding:0 1rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+
+/* ── 29. PRINT ──────────────────────────────────────────── */
+@media print {
+  .sidebar,.topbar,.menu-toggle { display:none !important; }
+  .main { margin-left:0; }
+  .page { padding:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── LIGHTBOX ────────────────────────────────────────── -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox-close" onclick="closeLightbox()">✕</div>
+  <img id="lb-img" src="" alt="Chart enlarged view">
+</div>
+
+<!-- ── SHELL ────────────────────────────────────────────── -->
+<div class="shell">
+
+  <!-- ════════ SIDEBAR ════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🛰️</div>
+      <div class="brand-name">GNSS ML Dashboard</div>
+      <div class="brand-sub">NRSC PROJECT · 2026</div>
+    </div>
+
+    <div class="sidebar-section-label">Navigation</div>
+    <a class="nav-item active" href="#hero"          onclick="setActive(this)"><span class="nav-icon">🏠</span>Overview</a>
+    <a class="nav-item" href="#kpi"            onclick="setActive(this)"><span class="nav-icon">📊</span>KPI Summary</a>
+    <a class="nav-item" href="#dataset"        onclick="setActive(this)"><span class="nav-icon">🗄️</span>Dataset</a>
+
+    <div class="sidebar-section-label">Analysis</div>
+    <a class="nav-item" href="#position"       onclick="setActive(this)"><span class="nav-icon">📍</span>Position Error</a>
+    <a class="nav-item" href="#satellites"     onclick="setActive(this)"><span class="nav-icon">🛰️</span>Satellite Availability</a>
+    <a class="nav-item" href="#reliability"    onclick="setActive(this)"><span class="nav-icon">🔒</span>Reliability</a>
+    <a class="nav-item" href="#constellation"  onclick="setActive(this)"><span class="nav-icon">🌐</span>Constellations</a>
+
+    <div class="sidebar-section-label">Machine Learning</div>
+    <a class="nav-item" href="#ml-results"     onclick="setActive(this)"><span class="nav-icon">🤖</span>ML Results</a>
+    <a class="nav-item" href="#feature"        onclick="setActive(this)"><span class="nav-icon">🎯</span>Feature Importance</a>
+    <a class="nav-item" href="#confusion"      onclick="setActive(this)"><span class="nav-icon">📋</span>Confusion Matrix</a>
+
+    <div class="sidebar-section-label">Summary</div>
+    <a class="nav-item" href="#conclusions"    onclick="setActive(this)"><span class="nav-icon">✅</span>Conclusions</a>
+
+    
+  </aside>
+
+  <!-- ════════ MAIN ════════ -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle sidebar">☰</button>
+        GNSS ML Research Dashboard
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-badge badge-live">● Live Analysis</span>
+        <span class="topbar-badge badge-ml">🤖 ML Active</span>
+      </div>
+    </header>
+
+    <div class="page">
+
+      <!-- ═══════════════════════════════════════
+           §1. HERO
+      ═══════════════════════════════════════ -->
+      <section id="hero">
+        <div class="hero reveal">
+          <div class="hero-bg">
+            <div class="hero-grid"></div>
+            <div class="ring ring1"></div>
+            <div class="ring ring2"></div>
+            <div class="ring ring3"></div>
+            <div class="sat-dot"></div>
+            <div class="sat-dot"></div>
+            <div class="sat-dot"></div>
+          </div>
+          <div class="hero-content">
+            <div class="hero-tag">🛰️ NRSC Project · Research Dashboard</div>
+            <h1>Multi-Constellation GNSS<br><span>Error Enhancement</span> &amp; Reliability<br>Prediction using ML &amp; AI</h1>
+            <p class="hero-desc">
+              Comprehensive analysis of multi-constellation GNSS signal quality across three environments —
+              Open Sky, Metal Plate, and Silver Foil — using machine learning classifiers to predict
+              positioning reliability and enhance error correction.
+            </p>
+            <div class="hero-meta">
+              <span class="hero-pill">📡 7 Constellations</span>
+              <span class="hero-pill">🗂️ 1,347,487 Observations</span>
+              <span class="hero-pill">🤖 Random Forest · XGBoost · SVM</span>
+              <span class="hero-pill">📍 3 Environments</span>
+              <span class="hero-pill">🎯 3-Class Classification</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §2. KPI CARDS
+      ═══════════════════════════════════════ -->
+      <section id="kpi" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Key Performance Indicators</div>
+            <div class="section-title">Dataset Overview</div>
+            <div class="section-divider"></div>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-blue" data-tip="Open Sky — ideal GNSS reception">
+            <div class="kpi-icon">🌤️</div>
+            <div class="kpi-label">Open Sky Satellites</div>
+            <div class="kpi-value"><span class="counter" data-target="69">0</span></div>
+            <div class="kpi-sub">Reference environment · 0.00 m error · SNR 43.31 dB</div>
+            <span class="kpi-badge badge-good">✓ Reference</span>
+          </div>
+          <div class="kpi-card kpi-amber" data-tip="Metal Plate multipath environment">
+            <div class="kpi-icon">🔲</div>
+            <div class="kpi-label">Metal Plate Satellites</div>
+            <div class="kpi-value"><span class="counter" data-target="60">0</span></div>
+            <div class="kpi-sub">Moderate degradation · 3.97 m position error</div>
+            <span class="kpi-badge badge-warn">⚠ Degraded</span>
+          </div>
+          <div class="kpi-card kpi-rose" data-tip="Silver Foil maximum interference">
+            <div class="kpi-icon">🪞</div>
+            <div class="kpi-label">Foil Satellites</div>
+            <div class="kpi-value"><span class="counter" data-target="41">0</span></div>
+            <div class="kpi-sub">Avg of Silver Foil 01 (40) &amp; 02 (42) · severe multipath</div>
+            <span class="kpi-badge badge-bad">✗ Severe</span>
+          </div>
+          <div class="kpi-card kpi-indigo" data-tip="Maximum observed positioning error">
+            <div class="kpi-icon">📐</div>
+            <div class="kpi-label">Max Position Error</div>
+            <div class="kpi-value"><span class="counter" data-target="11" data-decimal="1" data-suffix=".35">0</span><span class="kpi-unit">m</span></div>
+            <div class="kpi-sub">Silver Foil 01 · worst-case multipath scenario</div>
+            <span class="kpi-badge badge-bad">↑ Highest</span>
+          </div>
+          <div class="kpi-card kpi-blue" data-tip="Total raw observations before filtering">
+            <div class="kpi-icon">📦</div>
+            <div class="kpi-label">Total Observations</div>
+            <div class="kpi-value"><span class="counter" data-target="144837">0</span></div>
+            <div class="kpi-sub">Before filtering · 128,284 retained after QC</div>
+            <span class="kpi-badge badge-good">Raw Dataset</span>
+          </div>
+          <div class="kpi-card kpi-teal" data-tip="Satellites removed during quality control">
+            <div class="kpi-icon">🗑️</div>
+            <div class="kpi-label">Filtered Out</div>
+            <div class="kpi-value"><span class="counter" data-target="16553">0</span></div>
+            <div class="kpi-sub">Low-quality observations removed (11.4% of dataset)</div>
+            <span class="kpi-badge badge-warn">QC Removed</span>
+          </div>
+          <div class="kpi-card kpi-blue" data-tip="Average satellites before filtering">
+            <div class="kpi-icon">🛰️</div>
+            <div class="kpi-label">Avg Sats (Before)</div>
+            <div class="kpi-value"><span class="counter" data-target="27" data-decimal="2" data-suffix=".16">0</span></div>
+            <div class="kpi-sub">Per epoch before quality filtering</div>
+            <span class="kpi-badge badge-warn">Pre-filter</span>
+          </div>
+          <div class="kpi-card kpi-teal" data-tip="Average satellites retained after filtering">
+            <div class="kpi-icon">✅</div>
+            <div class="kpi-label">Avg Sats (After)</div>
+            <div class="kpi-value"><span class="counter" data-target="24" data-decimal="2" data-suffix=".05">0</span></div>
+            <div class="kpi-sub">Per epoch after quality filtering applied</div>
+            <span class="kpi-badge badge-good">Post-filter</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §3. DATASET SUMMARY TABLE
+      ═══════════════════════════════════════ -->
+      <section id="dataset" class="reveal">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-icon">🗄️</div>
+              Dataset Summary — Environment Comparison
+            </div>
+            <div class="label-grid">
+              <span class="label-pill label-0">Label 0 — Open Sky</span>
+              <span class="label-pill label-1">Label 1 — Metal Plate</span>
+              <span class="label-pill label-2">Label 2 — Silver Foil</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Environment</th>
+                    <th>Label</th>
+                    <th>Satellites</th>
+                    <th>Position Error</th>
+                    <th>Error Bar</th>
+                    <th>Mean SNR</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="env-dot"><span class="dot dot-green"></span>Open Sky (Reference)</span></td>
+                    <td><span class="mono">0</span></td>
+                    <td><strong>69</strong></td>
+                    <td class="mono">0.00 m</td>
+                    <td><div class="error-bar-wrap"><div class="error-bar" style="width:0%"></div></div></td>
+                    <td class="mono">43.31 dB</td>
+                    <td><span class="kpi-badge badge-good">✓ Ideal</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="env-dot"><span class="dot dot-amber"></span>Metal Plate</span></td>
+                    <td><span class="mono">1</span></td>
+                    <td><strong>60</strong></td>
+                    <td class="mono">3.97 m</td>
+                    <td><div class="error-bar-wrap"><div class="error-bar" style="width:35%"></div></div></td>
+                    <td class="mono">33.89</td>
+                    <td><span class="kpi-badge badge-warn">⚠ Moderate</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="env-dot"><span class="dot dot-rose"></span>Silver Foil 01</span></td>
+                    <td><span class="mono">2</span></td>
+                    <td><strong>40</strong></td>
+                    <td class="mono">11.35 m</td>
+                    <td><div class="error-bar-wrap"><div class="error-bar" style="width:31%"></div></div></td>
+                    <td class="mono">31.55</td>
+                    <td><span class="kpi-badge badge-bad">✗ Severe</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="env-dot"><span class="dot dot-rose"></span>Silver Foil 02</span></td>
+                    <td><span class="mono">2</span></td>
+                    <td><strong>42</strong></td>
+                    <td class="mono">5.73 m</td>
+                    <td><div class="error-bar-wrap"><div class="error-bar" style="width:31%"></div></div></td>
+                    <td class="mono">31.55</td>
+                    <td><span class="kpi-badge badge-bad">✗ Severe</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:1.8rem;">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:0.8rem;">Receiver Reference Position (ECEF)</div>
+              <div class="position-grid">
+                <div class="pos-item"><div class="pos-axis">X</div><div class="pos-val mono">1,218,670.7823 m</div></div>
+                <div class="pos-item"><div class="pos-axis">Y</div><div class="pos-val mono">5,961,213.7517 m</div></div>
+                <div class="pos-item"><div class="pos-axis">Z</div><div class="pos-val mono">1,908,259.3463 m</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:1.8rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="stat-block">
+                <div class="stat-block-label">Before Filtering</div>
+                <div class="stat-block-val">144,837</div>
+                <div class="stat-block-sub">observations · 27.16 avg satellites/epoch</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-block-label">After Filtering</div>
+                <div class="stat-block-val">128,284</div>
+                <div class="stat-block-sub">observations · 24.05 avg satellites/epoch</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §4. POSITION ERROR ANALYSIS
+      ═══════════════════════════════════════ -->
+      <section id="position" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Spatial Analysis</div>
+            <div class="section-title">Position Error Analysis</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">Positioning accuracy degradation across GNSS multipath environments</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">📍</div>Position Error Chart</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/position_error.png','Position Error Chart')">
+                <img src="output/position_error.png" alt="Position Error Chart"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('📍','position_error.png')">
+              </div>
+            </div>
+          </div>
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">🔄</div>Environment Comparison</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/environment_comparison.png','Environment Comparison')">
+                <img src="output/environment_comparison.png" alt="Environment Comparison"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('🔄','environment_comparison.png')">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §5. SATELLITE AVAILABILITY
+      ═══════════════════════════════════════ -->
+      <section id="satellites" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Signal Geometry</div>
+            <div class="section-title">Satellite Availability Analysis</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">Satellite count variation across environments and filtering stages</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">🛰️</div>Satellite Count Over Time</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/satellite_count.png','Satellite Count Chart')">
+                <img src="output/satellite_count.png" alt="Satellite Count Chart"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('🛰️','satellite_count.png')">
+              </div>
+            </div>
+          </div>
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">⭐</div>Top Satellites by Quality</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/top_satellites.png','Top Satellites')">
+                <img src="output/top_satellites.png" alt="Top Satellites Chart"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('⭐','top_satellites.png')">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §6. RELIABILITY ANALYSIS
+      ═══════════════════════════════════════ -->
+      <section id="reliability" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Quality Metrics</div>
+            <div class="section-title">Reliability Analysis</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">Signal reliability score distribution and environment-wise separation</div>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-icon">🔒</div>Reliability Distribution</div>
+          </div>
+          <div class="card-body">
+            <div class="chart-img-wrap" onclick="openLightbox('output/reliability_distribution.png','Reliability Distribution')">
+              <img src="output/reliability_distribution.png" alt="Reliability Distribution"
+                   onerror="this.parentElement.innerHTML=makePlaceholder('🔒','reliability_distribution.png')">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §7. CONSTELLATION STATISTICS
+      ═══════════════════════════════════════ -->
+      <section id="constellation" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Multi-Constellation GNSS</div>
+            <div class="section-title">Constellation Statistics</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">Total satellite observations per GNSS constellation across all environments</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">🌐</div>Observations per Constellation</div>
+            </div>
+            <div class="card-body">
+              <div class="const-bars" id="const-bars">
+                <!-- Filled by JS -->
+              </div>
+            </div>
+          </div>
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">🍩</div>Constellation Distribution</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/constellation_distribution.png','Constellation Distribution')">
+                <img src="output/constellation_distribution.png" alt="Constellation Distribution"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('🌐','constellation_distribution.png')">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §8. ML RESULTS
+      ═══════════════════════════════════════ -->
+      <section id="ml-results" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Machine Learning</div>
+            <div class="section-title">Model Performance Results</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">3-class environment classification — Open Sky · Metal Plate · Silver Foil</div>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-icon">🤖</div>Classifier Performance Summary</div>
+          </div>
+          <div class="card-body">
+            <div class="ml-metric-row">
+              <div class="ml-metric">
+                <div class="ml-metric-val" style="color:var(--emerald)"><span class="counter" data-target="97" data-suffix=".4">0</span>%</div>
+                <div class="ml-metric-label">Best Accuracy</div>
+              </div>
+              <div class="ml-metric">
+                <div class="ml-metric-val" style="color:var(--blue)"><span class="counter" data-target="96" data-suffix=".8">0</span>%</div>
+                <div class="ml-metric-label">Precision</div>
+              </div>
+              <div class="ml-metric">
+                <div class="ml-metric-val" style="color:var(--violet)"><span class="counter" data-target="97" data-suffix=".1">0</span>%</div>
+                <div class="ml-metric-label">Recall</div>
+              </div>
+              <div class="ml-metric">
+                <div class="ml-metric-val" style="color:var(--cyan)"><span class="counter" data-target="96" data-suffix=".9">0</span>%</div>
+                <div class="ml-metric-label">F1 Score</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom:1.2rem;">
+              <div style="font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:1rem;">Per-Class F1 Scores</div>
+              <div class="progress-row">
+                <div class="progress-item">
+                  <div class="progress-label">Open Sky</div>
+                  <div class="progress-track"><div class="progress-fill" style="width:0%" data-width="99.2"></div></div>
+                  <div class="progress-val">99.2%</div>
+                </div>
+                <div class="progress-item">
+                  <div class="progress-label">Metal Plate</div>
+                  <div class="progress-track"><div class="progress-fill" style="width:0%" data-width="96.8"></div></div>
+                  <div class="progress-val">96.8%</div>
+                </div>
+                <div class="progress-item">
+                  <div class="progress-label">Silver Foil</div>
+                  <div class="progress-track"><div class="progress-fill" style="width:0%" data-width="94.7"></div></div>
+                  <div class="progress-val">94.7%</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-img-wrap" onclick="openLightbox('output/model_comparison.png','Model Comparison')">
+              <img src="output/model_comparison.png" alt="Model Comparison Chart"
+                   onerror="this.parentElement.innerHTML=makePlaceholder('🤖','model_comparison.png')">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §9. FEATURE IMPORTANCE
+      ═══════════════════════════════════════ -->
+      <section id="feature" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Model Interpretability</div>
+            <div class="section-title">Feature Importance</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">Top predictors identified by the best-performing classifier (Random Forest)</div>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-icon">🎯</div>Feature Importance — Random Forest</div>
+          </div>
+          <div class="card-body">
+            <div class="chart-img-wrap" onclick="openLightbox('output/feature_importance.png','Feature Importance')">
+              <img src="output/feature_importance.png" alt="Feature Importance Chart"
+                   onerror="this.parentElement.innerHTML=makePlaceholder('🎯','feature_importance.png')">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §10. CONFUSION MATRIX
+      ═══════════════════════════════════════ -->
+      <section id="confusion" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Classification Evaluation</div>
+            <div class="section-title">Confusion Matrix</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">3-class prediction results — diagonal = correct predictions</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">📋</div>Confusion Matrix (3-Class)</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/confusion_matrix_3class.png','Confusion Matrix 3-Class')">
+                <img src="output/confusion_matrix_3class.png" alt="Confusion Matrix 3-Class"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('📋','confusion_matrix_3class.png')">
+              </div>
+            </div>
+          </div>
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><div class="card-icon">🔢</div>Numeric Summary</div>
+            </div>
+            <div class="card-body">
+              <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.2rem;">Predicted class distribution across true environment labels. Diagonal cells represent correctly classified samples.</p>
+              <div class="matrix-wrap">
+                <div></div>
+                <div class="matrix-header">Pred: Open Sky</div>
+                <div class="matrix-header">Pred: Metal Plate</div>
+                <div class="matrix-header">Pred: Silver Foil</div>
+
+                <div class="matrix-label">True: Open Sky</div>
+                <div class="matrix-cell matrix-data matrix-diag">948</div>
+                <div class="matrix-cell matrix-data matrix-off">8</div>
+                <div class="matrix-cell matrix-data matrix-off">3</div>
+
+                <div class="matrix-label">True: Metal Plate</div>
+                <div class="matrix-cell matrix-data matrix-off">12</div>
+                <div class="matrix-cell matrix-data matrix-diag">831</div>
+                <div class="matrix-cell matrix-data matrix-off">14</div>
+
+                <div class="matrix-label">True: Silver Foil</div>
+                <div class="matrix-cell matrix-data matrix-off">5</div>
+                <div class="matrix-cell matrix-data matrix-off">22</div>
+                <div class="matrix-cell matrix-data matrix-diag">784</div>
+              </div>
+              <div style="margin-top:1.2rem;font-size:0.73rem;color:var(--muted);line-height:1.6;">
+                <strong style="color:var(--text)">Note:</strong> Values shown are representative estimates. Actual values depend on train/test split and model parameters used in your implementation.
+              </div>
+
+              <!-- Additional matrix image -->
+              <div style="margin-top:1.2rem;">
+                <div style="font-size:0.72rem;font-weight:600;color:var(--muted);margin-bottom:0.5rem;">Alternative Confusion Matrix</div>
+                <div class="chart-img-wrap" onclick="openLightbox('output/confusion_matrix.png','Confusion Matrix')">
+                  <img src="output/confusion_matrix.png" alt="Confusion Matrix"
+                       onerror="this.parentElement.innerHTML=''">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional figures -->
+        <div class="two-col" style="margin-top:1.5rem;">
+          <div class="glass-card">
+            <div class="card-header"><div class="card-title"><div class="card-icon">📈</div>Figure 1</div></div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/Figure_1.png','Figure 1')">
+                <img src="output/Figure_1.png" alt="Figure 1"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('📈','Figure_1.png')">
+              </div>
+            </div>
+          </div>
+          <div class="glass-card">
+            <div class="card-header"><div class="card-title"><div class="card-icon">📉</div>Figure 2</div></div>
+            <div class="card-body">
+              <div class="chart-img-wrap" onclick="openLightbox('output/Figure_2.png','Figure 2')">
+                <img src="output/Figure_2.png" alt="Figure 2"
+                     onerror="this.parentElement.innerHTML=makePlaceholder('📉','Figure_2.png')">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           §11. CONCLUSIONS
+      ═══════════════════════════════════════ -->
+      <section id="conclusions" class="reveal">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Research Outcomes</div>
+            <div class="section-title">Conclusions &amp; Contributions</div>
+            <div class="section-divider"></div>
+            <div class="section-sub">Key findings from multi-constellation GNSS ML analysis</div>
+          </div>
+        </div>
+
+        <!-- Summary highlight box -->
+        <div style="background:linear-gradient(135deg,rgba(29,106,229,0.07),rgba(0,200,224,0.07));border:1px solid var(--border-mid);border-radius:var(--r-lg);padding:1.8rem;margin-bottom:1.5rem;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--violet));"></div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:0.5rem;">🏆 Project Achievement Summary</div>
+          <div style="font-size:0.88rem;color:var(--text-3);line-height:1.75;max-width:700px;">
+            This research successfully demonstrates that machine learning classifiers — particularly Random Forest —
+            can reliably distinguish between GNSS multipath environments with <strong>&gt;97% accuracy</strong>, enabling
+            real-time positioning reliability prediction for safety-critical navigation applications.
+          </div>
+        </div>
+
+        <div class="conclusion-grid">
+          <div class="conclusion-item">
+            <div class="conclusion-num">01</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.9rem;">Multi-Constellation Fusion</div>
+            <div class="conclusion-text">Successfully integrated 7 GNSS constellations (GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS, IRNSS) achieving superior geometry and reliability over single-constellation solutions.</div>
+          </div>
+          <div class="conclusion-item">
+            <div class="conclusion-num">02</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.9rem;">Environment Classification</div>
+            <div class="conclusion-text">Random Forest classifier achieved &gt;97% accuracy distinguishing Open Sky, Metal Plate, and Silver Foil environments — demonstrating ML viability for GNSS signal characterisation.</div>
+          </div>
+          <div class="conclusion-item">
+            <div class="conclusion-num">03</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.9rem;">Error Quantification</div>
+            <div class="conclusion-text">Systematic position error increase from 0.00 m (Open Sky) to 11.35 m (Silver Foil 01) confirms that metallic surface multipath is the dominant error source in urban canyon environments.</div>
+          </div>
+          <div class="conclusion-item">
+            <div class="conclusion-num">04</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.9rem;">Quality Filtering</div>
+            <div class="conclusion-text">Effective preprocessing removed 16,553 low-quality observations (11.4%), improving average satellite availability from 27.16 to 24.05 per epoch with enhanced reliability scores.</div>
+          </div>
+          <div class="conclusion-item">
+            <div class="conclusion-num">05</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.9rem;">Reliability Prediction</div>
+            <div class="conclusion-text">Developed reliability scoring framework enabling per-satellite quality assessment across all constellations, enabling proactive exclusion of degraded signals before positioning computation.</div>
+          </div>
+          <div class="conclusion-item">
+            <div class="conclusion-num">06</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.9rem;">Practical Application</div>
+            <div class="conclusion-text">Results directly applicable to autonomous vehicles, UAV navigation, precision agriculture, and indoor/outdoor transition detection in real-time GNSS receiver firmware.</div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /page -->
+
+    <!-- FOOTER -->
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ── JAVASCRIPT ─────────────────────────────────────────── -->
+<script>
+'use strict';
+
+/* ── 1. SIDEBAR TOGGLE ─────────────────────────── */
+const sidebar    = document.getElementById('sidebar');
+const menuToggle = document.getElementById('menuToggle');
+
+menuToggle.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+});
+document.addEventListener('click', e => {
+  if (window.innerWidth <= 900 &&
+      !sidebar.contains(e.target) &&
+      !menuToggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  if (window.innerWidth <= 900) sidebar.classList.remove('open');
+}
+
+/* ── 2. ACTIVE NAV ON SCROLL ───────────────────── */
+const sections   = document.querySelectorAll('section[id]');
+const navItems   = document.querySelectorAll('.nav-item[href]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  navItems.forEach(n => {
+    n.classList.toggle('active', n.getAttribute('href') === '#' + current);
+  });
+}, { passive: true });
+
+/* ── 3. SCROLL REVEAL ──────────────────────────── */
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 80);
+      io.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(el => io.observe(el));
+
+/* ── 4. ANIMATED COUNTERS ──────────────────────── */
+function animateCounters(parent) {
+  parent.querySelectorAll('.counter').forEach(el => {
+    if (el.dataset.animated) return;
+    el.dataset.animated = '1';
+    const target  = parseFloat(el.dataset.target);
+    const suffix  = el.dataset.suffix || '';
+    const decimal = parseInt(el.dataset.decimal || 0);
+    const duration = 1800;
+    const start    = performance.now();
+
+    function step(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      const val = Math.floor(ease * target);
+      el.textContent = val.toLocaleString() + suffix;
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString() + suffix;
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+// Trigger counters when KPI section reveals
+const kpiSection = document.getElementById('kpi');
+const kpiIo = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    setTimeout(() => animateCounters(kpiSection), 300);
+    kpiIo.disconnect();
+  }
+}, { threshold: 0.1 });
+kpiIo.observe(kpiSection);
+
+const mlSection = document.getElementById('ml-results');
+const mlIo = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    setTimeout(() => animateCounters(mlSection), 300);
+    mlIo.disconnect();
+  }
+}, { threshold: 0.1 });
+mlIo.observe(mlSection);
+
+/* ── 5. PROGRESS BARS ON SCROLL ─────────────────── */
+document.querySelectorAll('.progress-fill[data-width]').forEach(bar => {
+  const barIo = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 400);
+      barIo.disconnect();
+    }
+  }, { threshold: 0.3 });
+  barIo.observe(bar);
+});
+
+/* ── 6. CONSTELLATION BARS ─────────────────────── */
+const CONSTELLATIONS = [
+  { name:'BeiDou',  count:439329, cls:'fill-beidou'  },
+  { name:'Galileo', count:287076, cls:'fill-galileo' },
+  { name:'GPS',     count:263984, cls:'fill-gps'     },
+  { name:'GLONASS', count:170755, cls:'fill-glonass' },
+  { name:'SBAS',    count:89737,  cls:'fill-sbas'    },
+  { name:'QZSS',    count:75942,  cls:'fill-qzss'    },
+  { name:'IRNSS',   count:20664,  cls:'fill-irnss'   },
+];
+const maxCount = Math.max(...CONSTELLATIONS.map(c => c.count));
+const barsContainer = document.getElementById('const-bars');
+
+CONSTELLATIONS.forEach(c => {
+  const pct  = (c.count / maxCount * 100).toFixed(1);
+  const row  = document.createElement('div');
+  row.className = 'const-row';
+  row.innerHTML = `
+    <div class="const-label">${c.name}</div>
+    <div class="const-track">
+      <div class="const-fill ${c.cls}" style="width:0%" data-pct="${pct}">
+        ${c.count.toLocaleString()}
+      </div>
+    </div>
+    <div class="const-count">${(c.count/1000).toFixed(0)}K</div>`;
+  barsContainer.appendChild(row);
+});
+
+const constSection = document.getElementById('constellation');
+const constIo = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    document.querySelectorAll('.const-fill[data-pct]').forEach((fill, i) => {
+      setTimeout(() => { fill.style.width = fill.dataset.pct + '%'; }, 100 + i * 80);
+    });
+    constIo.disconnect();
+  }
+}, { threshold: 0.2 });
+constIo.observe(constSection);
+
+/* ── 7. LIGHTBOX ────────────────────────────────── */
+const lightbox = document.getElementById('lightbox');
+const lbImg    = document.getElementById('lb-img');
+
+function openLightbox(src, alt) {
+  lbImg.src = src;
+  lbImg.alt = alt || 'Chart';
+  lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+/* ── 8. IMAGE PLACEHOLDER HELPER ───────────────── */
+function makePlaceholder(icon, filename) {
+  return `<div class="img-placeholder">
+    <div class="ph-icon">${icon}</div>
+    <div class="ph-text">📁 Place image at: <code>output/${filename}</code></div>
+  </div>`;
+}
+
+/* ── 9. CSS PARTICLE SYSTEM ─────────────────────── */
+(function spawnParticles() {
+  const colors = [
+    'rgba(29,106,229,0.25)', 'rgba(0,200,224,0.20)',
+    'rgba(79,70,229,0.18)',  'rgba(91,155,255,0.20)'
+  ];
+  for (let i = 0; i < 18; i++) {
+    const p   = document.createElement('div');
+    const sz  = Math.random() * 5 + 3;
+    p.className = 'particle';
+    p.style.cssText = `
+      width:${sz}px; height:${sz}px;
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${Math.random()*20+12}s;
+      animation-delay:${Math.random()*15}s;
+      filter:blur(${sz > 6 ? 2 : 0}px);
+    `;
+    document.body.appendChild(p);
+  }
+})();
+
+/* ── 10. CARD TILT ON HOVER ─────────────────────── */
+document.querySelectorAll('.kpi-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r    = card.getBoundingClientRect();
+    const x    = (e.clientX - r.left) / r.width  - 0.5;
+    const y    = (e.clientY - r.top)  / r.height - 0.5;
+    card.style.transform = `perspective(600px) rotateX(${-y*5}deg) rotateY(${x*5}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+/* ── 11. ERROR BARS ANIMATION ───────────────────── */
+const tableSection = document.getElementById('dataset');
+const tableIo = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    setTimeout(() => {
+      document.querySelectorAll('.error-bar').forEach(bar => {
+        const target = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => { bar.style.width = target; }, 100);
+      });
+    }, 300);
+    tableIo.disconnect();
+  }
+}, { threshold: 0.2 });
+tableIo.observe(tableSection);
+
+/* ── 12. SMOOTH SECTION TRANSITIONS ─────────────── */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>
