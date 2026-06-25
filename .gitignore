@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Model Files
+*.pkl
+*.joblib
+
+# Temporary Files
+*.tmp
+*.bak
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
+
+# Cache
+.cache/
+
+# Python cache
+.pytest_cache/
+
+# Large Raw GNSS Data
+data/raw/
+
+# Generated Outputs
+output/*.csv
+output/*.png
+output/*.jpg
+
+# Keep sample outputs
+!output/sample/
+
+# Ignore compiled files
+*.pyc
